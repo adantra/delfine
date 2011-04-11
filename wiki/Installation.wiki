@@ -8,7 +8,7 @@
   * Python
   * Dolfin - FEM assembly
   * Scipy - Matrices assembly
-  * PyAmg - Solver for linear equations system
+  * [http://www.code.google.com/p/pyamg PyAmg] - Solver for linear equations system
   * rnv - XML file check against grammar
 
 = Software - Optional =
