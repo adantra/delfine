@@ -5,14 +5,14 @@
 
 = Software - Mandatory =
 
-  * [www.python.org Python]
-  * [www.fenicsproject.org FEniCS/Dolfin] - FEM assembly
-  * [www.scipy.org Scipy] - Matrices assembly
+  * [http://www.python.org Python]
+  * [http://www.fenicsproject.org FEniCS/Dolfin] - FEM assembly
+  * [http://www.scipy.org Scipy] - Matrices assembly
   * [http://www.code.google.com/p/pyamg PyAmg] - Solver for linear equations system
   * [http://www.davidashen.net/rnv.html RNV] - XML file check against grammar
 
 = Software - Optional =
 
- * [www.geuz.org/gmsh Gmsh] - Mesh Generation
- * [www.paraview.org Paraview] - Results Visualization
- * [subversion.tigris.org svn] - Code version management
+ * [http://www.geuz.org/gmsh Gmsh] - Mesh Generation
+ * [http://www.paraview.org Paraview] - Results Visualization
+ * [http://www.subversion.tigris.org svn] - Code version management
