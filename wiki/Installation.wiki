@@ -1,0 +1,18 @@
+#summary Installation instructions
+
+= Installation Instructions =
+
+
+= Software - Mandatory =
+
+  * Python
+  * Dolfin - FEM assembly
+  * Scipy - Matrices assembly
+  * PyAmg - Solver for linear equations system
+  * rnv - XML file check against grammar
+
+= Software - Optional =
+
+ * Gmsh - Mesh Generation
+ * Paraview - Results Visualization
+ * svn - Code version management
