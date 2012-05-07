@@ -1,0 +1,127 @@
+%%--------------------------------------------------
+%%
+%% Dissertação de Mestrado
+%% Autor: Bruno Luna - Data(Início): 29/11/2010 
+%%                     Data(Defesa): 27/02/2012
+%%---------------------------------------------------
+\documentclass[pt,oneside,onehalfspacing]{risethesis}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% PACKAGES AND CUSTOMIZATIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{natbib}
+\usepackage{babel}
+\usepackage{supertabular}
+\usepackage{subfigure}
+\usepackage{fancybox}
+\usepackage{acronym}
+\usepackage{url}
+% Command to draw lines
+\usepackage{tikz}
+% Commands for list of symbols
+\usepackage[intoc,portuguese]{nomencl}
+\makenomenclature
+\renewcommand{\nomname}{Lista de Símbolos}
+% Commands for code listings
+\usepackage{codehighlight}
+\usepackage{minted}
+\usemintedstyle{tango}
+\newminted{xml}{bgcolor=yellow!10, frame=single, rulecolor=\color{black!50}, label="XML"}
+\newminted{python}{bgcolor=yellow!10, frame=single, rulecolor=\color{black!50}, label="Python"}
+\renewcommand\listingscaption{Listagem}
+%% Change the following pdf author attribute name to your name.
+\usepackage[linkcolor=black,citecolor=black,urlcolor=black,colorlinks,pdfpagelabels,pdftitle={brunoluna-msc},pdfauthor={Bruno Gustavo Borges Luna}]{hyperref}
+% Command added to present problem in 'theorem form'
+\newtheorem{problem}{Problema}
+% Definition for tensors format
+\def\mathbi#1{\textbf{\em #1}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% FRONT MATTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\address{Recife}
+
+\universitypt{Universidade Federal de Pernambuco}
+\universityen{Federal University of Pernambuco}
+
+\departmentpt{Centro de Tecnologia e Geociências}
+\departmenten{Centre for Technology and Geosciences}
+
+\programpt{Pós-graduação em Engenharia Mecânica}
+\programen{Graduate in Mechanical Engineering}
+
+\majorfieldpt{Engenharia Mecânica}
+\majorfielden{Mechanical Engineering}
+
+\title{Modelagem Automática de Escoamentos em Meios Porosos via Método dos Elementos Finitos}
+\date{Fevereiro de 2012}
+
+\author{Bruno Gustavo Borges Luna}
+\adviser{Paulo Roberto Maciel Lyra}
+\coadviser{Ramiro Brito Willmersdorf}
+
+\begin{document}
+
+\frontmatter
+\frontpage
+\presentationpage
+
+%SIGNATURES
+\input{chapters/extras/signatures}
+
+\begin{dedicatory}
+Dedico à \ldots
+\end{dedicatory}
+
+\acknowledgements
+Agradeço \ldots
+
+\resumo
+\input{chapters/extras/resumo}
+
+\abstract
+\input{chapters/extras/abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+% ACRONYMS
+\input{chapters/extras/acronyms}
+\printnomenclature
+\mainmatter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% BEGIN CHAPTERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CHAPTER 01 - INTRODUCTION
+\include{chapters/ch01/introduction}
+
+% CHAPTER 02 - MATHEMATICAL FORMULATION
+\include{chapters/ch02/formulacaoMatematica}
+
+% CHAPTER 03 - NUMERICAL FORMULATION
+\include{chapters/ch03/formulacaoNumerica}
+
+% CHAPTER 04 - IMPLEMENTATION
+\include{chapters/ch04/implementacao}
+
+% CHAPTER 05 - RESULTS
+\include{chapters/ch05/resultados}
+
+% CHAPTER 06 - CONCLUSION
+\include{chapters/ch06/conclusoes}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% BACK MATTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{natbib}
+\addcontentsline{toc}{chapter}{Referências Bibliográficas}
+% REFERENCES
+\bibliography{chapters/extras/references}
+
+% APPENDIX
+\clearpage
+\appendix
+% A01 - USER GUIDE
+\include{chapters/appendix/a01}
+
+\end{document}

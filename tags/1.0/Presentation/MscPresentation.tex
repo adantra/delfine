@@ -1,0 +1,1395 @@
+\documentclass[10pt] {beamer}
+
+%% SECTION 0 - Packages and Configurations
+\usepackage{minted}
+\usemintedstyle{tango}
+\newminted{xml}{bgcolor=yellow!10, frame=single, rulecolor=\color{black!50}, label="XML"}
+\newminted{python}{bgcolor=yellow!10, frame=single, rulecolor=\color{black!50}, label="Python"}
+
+\mode<beamer>{%
+  %%\usetheme[right,width=22mm]{Berlin}
+  \usetheme{Warsaw}
+}
+\usepackage[portuguese]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{subfigure}
+\usepackage{supertabular}
+% Command added to present problem in 'theorem form'
+% Definition for tensors format
+\def\mathbi#1{\textbf{\em #1}}
+
+\setbeamercovered{transparent}
+
+\title[ ]{Modelagem Automática de Escoamentos em Meios Porosos via Método dos Elementos Finitos}
+\author[ ]{Mestrando: Bruno Luna \linebreak Orientador: Paulo Lyra \linebreak Co-orientador: Ramiro Willmersdorf}
+\institute{Defesa de Dissertação - Mestrado/PPGEM - UFPE}
+%%\titlegraphic{\includegraphics[width=40mm]{BIPHASE2D2}}
+\date{Fevereiro - 2012}
+\AtBeginSection[]
+{
+   \begin{frame}
+       \tableofcontents[currentsection]
+   \end{frame}
+}
+\begin{document}
+{
+%%\usebackgroundtemplate{\includegraphics[width=\paperwidth]{BIPHASE2D2_t6}}
+\begin{frame}<handout:0>
+  \titlepage
+\end{frame}
+}
+
+\section*{Sumário}
+\begin{frame}
+\tableofcontents
+\end{frame}
+
+%% SECTION 1 - Introduction
+\section{Motivação e Objetivos}
+
+\begin{frame}
+  \frametitle{Motivação}
+  \begin{block}{Gerenciamento de Reservatórios de Petróleo}
+   \begin{itemize}
+    \item <2-> Agilidade na Resposta
+    \item <3-| alert@3-> Métodos Numéricos
+   \end{itemize}
+  \end{block}
+
+  \begin{block}{Programas de Simulação Numérica}
+   \begin{itemize}
+    \item <4-> Codificação Complexa e Demorada
+    \item <5- | alert@5-> Geração Automática do Código
+   \end{itemize}
+  \end{block}
+  
+  \begin{block}{Sist. Eq. Lineares}
+   \begin{itemize}
+    \item <6-> Velocidade para Viabilização do Uso
+    \item <7- | alert@7-> Aceleração de Convergência
+   \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Objetivos}
+  \begin{itemize}
+   \item <1-> Simulador de Escoamentos Bifásicos Óleo-Água em Meios Porosos
+   \begin{itemize}
+    \item <2-> Método dos Elementos Finitos (FEM)
+    \item <2-> Domínios Homo- e Heterogêneo
+    \item <2-> Tensores Iso- e Anisotrópicos
+   \end{itemize}
+   
+   \item <3-> Automatização do Desenvolvimento
+   \begin{itemize}
+    \item <4-> Pacotes Disponíveis Publicamente (Fenics/Dolfin)
+    \item <4-> Gerenciamento e Expansão do Código
+   \end{itemize}
+   
+   \item <5-> Técnica de Aceleração de Convergência   
+   \begin{itemize}
+    \item <6-> Multigrid Algébrico (AMG)
+    \item <6-> Precondicionador para CG/GMRES
+   \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%% SECTION 2 - Mathematical Formulation
+\section{Formulação Matemática}
+
+%\begin{frame}
+%  \frametitle{Conceitos}
+%  \begin{columns}
+%  \column{0.7\textwidth}
+%    \begin{figure}[ht]
+%    \begin{center}
+%    \includegraphics[width=1.0\textwidth]{figs/MeioPoroso}
+%    \end{center}
+%    \end{figure}
+%  \column{0.3\textwidth}
+%    \begin{block}{Porosidade Absoluta}
+%    \begin{displaymath} \label{eq:porosidade}
+%    \phi = \frac{V_{p}}{V_{t}}
+%    \end{displaymath}
+%    \end{block}
+%  \end{columns}
+%\end{frame}
+
+%\begin{frame}
+%  \frametitle{Conceitos}
+%  \begin{columns}
+%  \column{0.7\textwidth}
+%    \begin{figure}[ht]
+%    \begin{center}
+%    \includegraphics[width=1.0\textwidth]{figs/MeioPorosoSaturado}
+%    \end{center}
+%    \end{figure}
+%  \column{0.3\textwidth}
+%    \begin{block}{Porosidade Efetiva}
+%    \begin{displaymath} \label{eq:porosidade}
+%    \phi = \frac{V_{p conec}}{V_{t}}
+%    \end{displaymath}
+%    \end{block}
+%  \end{columns}
+%\end{frame}
+
+%\begin{frame}
+%  \frametitle{Conceitos}
+%  \begin{columns}
+%  \column{0.6\textwidth}
+%    \begin{figure}[ht]
+%    \begin{center}
+%    \includegraphics[width=0.8\textwidth, angle=270]{figs/PorosityPermModel}
+%    \end{center}
+%    \end{figure}
+%  \column{0.4\textwidth}
+%    \begin{block}{Permeabilidade Absoluta}
+%    \begin{displaymath} \label{eq:permabs}
+%    \mathbi{K} = \left( \begin{array}{ccc}
+%    K_{xx} & K_{xy} & K_{xz} \\
+%    K_{yx} & K_{yy} & K_{yz} \\
+%    K_{zx} & K_{zy} & K_{zz}
+%    \end{array} \right)
+%    \end{displaymath}
+%    \end{block}
+%  \end{columns}
+%\end{frame}
+
+%\begin{frame}
+%  \frametitle{Conceitos}
+%  \begin{columns}
+%  \column{0.6\textwidth}
+%    \begin{figure}[ht]
+%    \begin{center}
+%    \includegraphics[width=1.0\textwidth]{figs/relat_perm}
+%    \end{center}
+%    \end{figure}
+%  \column{0.4\textwidth}
+%    \begin{block}{Permeabilidade Relativa}
+%    \begin{displaymath} \label{eq:permrel}
+%    k_{r\alpha} = \frac{\mathbi{K}_{\alpha}}{\mathbi{K}} \leq 1
+%    \end{displaymath}
+%    \begin{displaymath} \label{eq:coreymodela}
+%    k_{rw}(S_{wn}) = k_{rw}^{o}S_{wn}^{n_{w}}
+%    \end{displaymath}
+%    \begin{displaymath} \label{eq:coreymodelb}
+%    k_{row}(S_{wn}) = \left(1 - S_{wn}\right)^{n_{w}}
+%    \end{displaymath}
+%    \end{block}
+%  \end{columns}
+%\end{frame}
+
+%\begin{frame}
+%  \frametitle{Conceitos}
+%  \begin{columns}
+%  \column{0.6\textwidth}
+%    \begin{figure}[ht]
+%    \begin{center}
+%    \includegraphics[width=1.0\textwidth]{figs/swnorm}
+%    \end{center}
+%    \end{figure}
+%  \column{0.4\textwidth}
+%    \begin{block}{Saturação Normalizada}
+%    \begin{displaymath} \label{eq:satnorm}
+%    S_{wn}(S_{w}) = \frac{S_{w} - S_{wi}}{1 - S_{wi} - S_{orw}}
+%    \end{displaymath}
+%    \end{block}
+%  \end{columns}
+%\end{frame}
+
+\begin{frame}
+  \frametitle{Hipóteses Simplificadoras}
+  \begin{itemize}
+  \item Meio poroso totalmente saturado;
+  \item Rochas e fluidos incompressíveis;
+  \item Fluidos imiscíveis;
+  \item Escoamento isotérmico;
+  \item Lei de Darcy válida para as velocidades consideradas.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conservação de Massa}
+  \begin{block}{Lei de Darcy}<1->
+  \begin{equation*}
+  \vec{v}_{\alpha} = - \frac{K_{\alpha}}{\mu_{\alpha}} \nabla\left(p_{\alpha} - \rho_{\alpha}g\nabla z \right)
+  \end{equation*}
+  \end{block}
+  
+  \begin{block}{Conservação por Fase $\alpha$}<1->
+  \begin{equation*}
+-\nabla \cdot \left(\rho_{\alpha} \vec{v}_{\alpha}\right) + q_{\alpha} =
+\frac{\partial \left(\phi \rho_{\alpha} S_{\alpha}\right)}{\partial t} 
+  \end{equation*}
+  \end{block}
+  
+    \begin{block}{Divisão por $\rho_{\alpha}$, hipótese de incompressibilidade e soma das eqs. das fases}<1->
+  \begin{equation*} \label{eq:twophase_oneequation}
+-\nabla \cdot \mathbi{v}_{t} + Q_{t} = \phi \frac{\partial \left(S_{w} + S_{o}\right)}{\partial t}
+  \end{equation*}
+  \end{block}
+  
+%  \begin{alertblock}{Sistema Acoplado para Escoamento Multifásico em Meios Porosos}<2->
+%  \begin{equation*}
+%\nabla \cdot \left(\frac{\rho_{\alpha}Kk_{r\alpha}}{\mu_{\alpha}} \nabla\left(p_{\alpha} - \rho_{\alpha}g\nabla z \right)\right) + q_{\alpha} =
+%\frac{\partial \left(\phi \rho_{\alpha} S_{\alpha}\right)}{\partial t} 
+%  \end{equation*}
+%  \end{alertblock}
+\end{frame}
+
+\subsection{Equação da Pressão}
+
+%\begin{frame}
+%  \frametitle{Equação da Pressão }
+%  \begin{block}{Expansão da Derivada Temporal}<1->
+%\begin{equation*} \label{eq:twophase_system2a}
+%-\nabla \cdot \left(\rho_{\alpha} \mathbi{v}_{\alpha}\right) + q_{\alpha} =
+%\rho_{\alpha}S_{\alpha}\frac{\partial \phi}{\partial t} + \phi S_{\alpha} \frac{d\rho_{\alpha}}%{d p_{\alpha}} \frac{\partial p_{\alpha}}{\partial t} + \phi\rho_{\alpha}\frac{\partial S_{\alpha}}{\partial t}
+%  \end{equation*}
+%  \end{block}
+  
+%  \begin{block}{Divisão por $\rho_{\alpha}$, hipótese de incompressibilidade e soma das eqs. das fases}<1->
+%  \begin{equation*} \label{eq:twophase_oneequation}
+%-\nabla \cdot \mathbi{v}_{t} + Q_{t} = \phi \frac{\partial \left(S_{w} + S_{o}\right)}{\partial t}
+%  \end{equation*}
+%  \end{block}
+  
+%  \begin{block}{$\sum_{\alpha=1}^n S_{\alpha} = 1 $ -$>$ Eq. da Pressão para escoamentos bifásicos}<2->
+%  \begin{equation*}
+%  \nabla \cdot \mathbi{v}_{t} = Q_{t}
+%  \end{equation*}
+%  \end{block}
+%\end{frame}
+
+%\begin{frame}
+%  \frametitle{Equação da Pressão}
+%  \begin{block}{Definição de pressão média e capilar}<1->
+%  \begin{equation*} \label{eq:average_press}
+%  p_{avg} = \frac{p_{w} + p_{o}} {2}
+%  \end{equation*}
+%  \begin{equation*} \label{eq:phase_pressures}
+%  p_{c} = p_{o} - p_{w}
+%  \end{equation*}
+%  \end{block}
+%  
+%  \begin{block}{Definição de mobilidade da fase $\alpha$}<1->
+%  \begin{equation*} \label{eq:phase_mob}
+%  \lambda_{\alpha} = \frac{k_{r\alpha}}{\mu_{\alpha}} 
+%  \end{equation*}
+%  \end{block}
+%  
+%  \begin{alertblock}{Forma expandida da Eq. da Pressão}<2->
+%  \begin{equation*}
+%\nabla \cdot \left(-\mathbi{K} \left( \left(\lambda_{w} + \lambda_{o} \right)\nabla p_{avg} + %\frac{\lambda_{w} - \lambda_{o}}{2}\nabla p_{c} - 
+%\left(\lambda_{w}\rho_{w} + \lambda_{o}\rho_{o} \right)g\nabla z \right) \right) = Q_{t}
+%  \end{equation*}
+%  \end{alertblock}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Equação da Pressão}
+\begin{itemize}
+\item <1-> Desprezando a pressão capilar e considerando um fluxo horizontal:
+\end{itemize}
+\begin{alertblock}{Forma segregada da Eq. da Pressão}
+\begin{equation*}
+- \nabla \cdot \left(\mathbi{K} \lambda_{t} \nabla p \right) = Q_{t}
+\end{equation*}
+\end{alertblock}
+\end{frame}
+
+\subsection{Equação da Saturação}
+
+%\begin{frame}
+%  \frametitle{Equação da Saturação}
+%  \begin{block}{Considerando as velocidades para um caso bifásico mais geral}<1->
+%  \begin{equation*} \label{eq:phase_velocitiesa}
+%\mathbi{v}_{w} = - \mathbi{K}\lambda_{w} \left(\nabla p_{w} - \rho_{w}g\nabla z \right)
+%  \end{equation*}
+%  \begin{equation*} \label{eq:phase_velocitiesb}
+%\mathbi{v}_{o} = - \mathbi{K}\lambda_{o} \left(\nabla p_{o} - \rho_{o}g\nabla z \right)
+%  \end{equation*}
+%  \end{block}
+%  
+%  \begin{block}{Utilizando pressão capilar, velocidade e mobilidade totais}<1->
+%\begin{equation*} \label{eq:phase_velocities3}
+%\lambda_{t}\mathbi{v}_{w} = \lambda_{w}\mathbi{v}_{t} + %\mathbi{K}\lambda_{o}\lambda_{w}\left(\nabla p_{c} + \left(\rho_{w} - \rho_{o}\right)g\nabla %z\right)
+%\end{equation*}
+%  \end{block}
+  
+%  \begin{block}{Fluxo fracional e função da saturação para simplificar notação}<1->
+%  \begin{equation*} \label{eq:fracflux}
+%  f_{\alpha} = \frac{\lambda_{\alpha}}{\lambda_{t}}
+%  \end{equation*}
+%  \begin{equation*} \label{eq:derivcapsat}
+%  h_{w} = - \frac{\lambda_{o}\lambda_{w}}{\lambda_{t}} \frac{d p_{c}}{d S_{w}}
+%  \end{equation*}
+%  \end{block}
+
+%\end{frame}
+
+%\begin{frame}
+%\frametitle{Equação da Saturação}
+%\begin{itemize}
+%\item <1-> Manipulando a Eq. de Conservação e usando as definições anteriores:
+%\end{itemize}
+%\begin{block}{Forma expandida da Eq. da Saturação}
+%\begin{equation*} \label{eq:sateq}
+%\frac{\partial (\phi\rho_{w}S_{w})}{\partial t} = - \nabla\cdot\left(\rho_{w}\left(f_{w}\mathbi{v}_{t} - \mathbi{K}h_{w}\nabla S_{w} + \mathbi{K}\lambda_{o}f_{w}\left(\rho_{w} - \rho_{o}\right)g\nabla z\right)\right) + q_{w}
+%\end{equation*}
+%\end{block}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Equação da Saturação}
+\begin{itemize}
+\item <1-> Desprezando a pressão capilar e considerando um fluxo horizontal:
+\end{itemize}
+\begin{alertblock}{Forma segregada da Eq. da Saturação}
+\begin{equation*} \label{eq:sateq4}
+\phi\frac{\partial S_{w}}{\partial t} = - \nabla\cdot\left(f_{w}\mathbi{v}_{t}\right) + Q_{w}
+\end{equation*}
+\end{alertblock}
+\end{frame}
+
+%% SECTION 3 - Numerical Formulation
+\section{Formulação Numérica}
+
+\subsection{Método dos Elementos Finitos}
+
+\begin{frame}
+  \frametitle{Método dos Elementos Finitos - Galerkin}
+\begin{itemize}
+\item <1-> Multiplicando a EDP por uma função de ponderação $w$, em seguida integrando no domínio $\Omega$ e utilizando integração por partes:
+\end{itemize}
+ \begin{problem} [Contínuo - Forma Fraca da Eq. da Pressão]
+%Encontre $p$ $\in$ $P$ tal que:
+%\begin{equation*} \label{eq:variational}
+%A(p,w) = f(w) \quad \forall w \in W
+%\end{equation*}
+%com
+\begin{equation*} \label{eq:funcspace1}
+P = \{ p \in H^{1}(\Omega); \textrm{$p = p_{D}$ em $\Gamma_{D}$} \}  
+\end{equation*}
+\begin{equation*} \label{eq:funcspace2}
+W = \{ w \in H^{1}(\Omega); \textrm{$w = 0$ em $\Gamma_{N}$} \}  
+\end{equation*}
+\begin{equation*} \label{eq:bilinearform}
+\int_{\Omega} \lambda K \nabla p \cdot \nabla w d \Omega = \int_{\Omega} Q_{t}w d \Omega
+\end{equation*}
+%\begin{equation*} \label{eq:linearform}
+%f(w) = \int_{\Omega} q_{t}w d \Omega \quad \forall w \in W
+%\end{equation*}
+\end{problem}
+\end{frame}
+
+\begin{frame}
+\frametitle{Método dos Elementos Finitos - Galerkin}
+\begin{itemize}
+\item <1-> Solução da EDP tem que existir em um espaço de funções com derivadas contínuas (\emph{forma forte}).
+\item <1-> Espaço de Sobolev de grau 1 exigido pela forma fraca permite funções com derivadas descontínuas.
+\end{itemize}
+\begin{block}{Espaços de funções}
+\begin{equation*} \label{eq:sobolevspace}
+H^{k}(\Omega) = \{w \in L_{2}(\Omega); w_{,x} \in L_{2}(\Omega); \ldots; w_{,\underbrace{x \ldots x}_{k \phantom{l} vezes}} \in L_{2}(\Omega) \}  
+\end{equation*}
+onde
+\begin{equation*} \label{eq:lebesguespace}
+L_{2}(\Omega) = \{w | \int_{\Omega} w^{2} d \Omega < \infty \}  
+\end{equation*}
+\end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Método dos Elementos Finitos - Galerkin}
+\begin{problem} [Discreto - Forma fraca da Eq. da Pressão]
+%Encontre $p_{h}$ $\in$ $P_{h}$ tal que:
+%\begin{equation*} \label{eq:galerkin}
+%A(p_{h},w_{h}) = f(w_{h}) \quad \forall w_{h} \in W_{h}
+%\end{equation*}
+%com
+\begin{equation*} \label{eq:funcspace1h}
+P_{h} = \{ p_{h} \in H^{1}(\Omega_{h}); p_{h} \in \mathbf{P}^{k}(E_{i}); \textrm{$p_{h} = p_{D}$ em $\Gamma_{D}$} \}  
+\end{equation*}
+\begin{equation*} \label{eq:funcspace2h}
+W_{h} = \{ w_{h} \in H^{1}(\Omega_{h}); w_{h} \in \mathbf{P}^{k}(E_{i}); \textrm{$w_{h} = 0$ em $\Gamma_{N}$} \}  
+\end{equation*}
+\begin{equation*} \label{eq:bilinearformh}
+A(p_{h},w_{h}) = \int_{\Omega_{h}} \lambda K \nabla p_{h} \cdot \nabla w_{h} d \Omega \quad \forall p_{h},w_{h} \in P_{h},W_{h}
+\end{equation*}
+\begin{equation*} \label{eq:linearformh}
+f(w_{h}) = \int_{\Omega_{h}} Q_{t}w_{h} d \Omega \quad \forall w_{h} \in W_{h}
+\end{equation*}
+\end{problem}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Método dos Elementos Finitos - Galerkin}
+  \begin{itemize}
+\item <1-> $\mathbf{P}^{k}(E_{i})$ define funções de forma de Lagrange com ordem $k$ para o elemento finito $E_{i}$.
+\end{itemize}
+\begin{figure}
+\centering
+\subfigure[Triângulo Linear]{
+\includegraphics[width=0.28\textwidth]{figs/LagTri1}
+}
+\quad
+\subfigure[Triângulo Quadrático]{
+\includegraphics[width=0.28\textwidth]{figs/LagTri2}
+}
+\quad
+\subfigure[Triângulo Cúbico]{
+\includegraphics[width=0.28\textwidth]{figs/LagTri3}
+}
+\label{fig:femtrilinear}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Método dos Elementos Finitos Mistos (MEFM)}
+  \begin{itemize}
+\item <1-> Método de Galerkin calcula apenas a pressão.
+\item <1-> Velocidade a partir da Lei de Darcy -$>$ Baixa convergência.
+\item <1-> Método dos Elementos Finitos Mistos calcula simultaneamente pressão e velocidade.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEFM - Obtenção da Forma Fraca}
+  \begin{block}{Equação da Pressão}<1->
+\begin{equation*} \label{eq:pressure_eq_formMFEM}
+\nabla \cdot \mathbi{v} = Q
+\end{equation*}
+  \end{block}
+
+  \begin{block}{Equação da Velocidade}<1->
+\begin{equation*} \label{eq:vel_eq_formMFEM}
+\mathbf{v} = - \mathbi{K} \lambda \nabla p
+\end{equation*}
+  \end{block}
+    
+  %\begin{block}{Espaço de Sobolev para funções vetorias}<1->
+%\begin{equation*} \label{eq:vectorsobolevspace}
+%\mathbf{H}(div, \Omega) = \{\mathbf{\zeta} = (\zeta_{1}, \zeta_{2}) \in (L_{2}(\Omega))^{2}; \nabla \cdot \mathbf{\zeta} \in L_{2}(\Omega) \}  
+%\end{equation*}
+%\begin{equation*} \label{eq:vectorsobolevspace2}
+%\mathbf{V} = \{\mathbf{\zeta} \in \mathbf{H}(div, \Omega); \mathbf{\zeta} \cdot n = 0 \phantom{l} \textrm{em $\Gamma_{N}$} \}
+%\end{equation*}
+%  \end{block}
+  
+  \begin{block}{Definição para produto interno}<1->
+\begin{equation*} \label{eq:innerprod}
+(v,w) = \int_{\Omega} v(x)w(x) dx
+\end{equation*}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEFM - Obtenção da Forma Fraca}
+%  \begin{block}{Equação da velocidade}<1->
+%\begin{equation*} \label{eq:pressure_eq_formMFEM}
+%\mathbf{v} = - \mathbi{K} \lambda \nabla p
+%\end{equation*}
+%  \end{block}
+
+\begin{itemize}
+\item <1-> Multiplicando as equações por funções de ponderação, integrando  e rearranjando os termos:
+\end{itemize}
+
+  \begin{block}{Equação da Pressão}<1->
+\begin{equation*} \label{eq:pressure_eq_formMFEM5}
+(\nabla \cdot \mathbf{v}, w) = (Q, w)
+\end{equation*}
+  \end{block}
+  
+  \begin{block}{Equação da Velocidade}<1->
+\begin{equation*} \label{eq:pressure_eq_formMFEM4}
+\left( \frac{\mathbi{K}^{-1}}{\lambda} \mathbf{v}, \zeta \right) = (\nabla \cdot \zeta, p)
+\end{equation*}
+  \end{block}
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEFM - Obtenção da Forma Fraca}
+\begin{problem} [Contínuo - Forma Fraca da Eq. da Pressão e Velocidade]
+\begin{equation*} \label{eq:funcspace1mfem}
+\mathbf{V} = \{\mathbf{\zeta} \in \mathbf{H}(div, \Omega); \mathbf{\zeta} \cdot n = 0 \phantom{l} \textrm{em $\Gamma_{N}$} \}
+\end{equation*}
+\begin{equation*} \label{eq:funcspace2mfem}
+W = L_{2}(\Omega)
+\end{equation*}
+\begin{equation*} \label{eq:bilinearformhmfemch03}
+\left( \frac{\mathbi{K}^{-1}}{\lambda} \mathbf{v}, \zeta \right) -(\nabla \cdot \zeta, p) -(\nabla \cdot \mathbf{v}, w) = - (Q, w)
+\end{equation*}
+%\begin{equation*} \label{eq:linearformhmfemch03}
+%f(w) = - (Q, w)
+%\end{equation*}
+\end{problem}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEFM - Discretização da Forma Fraca}
+  \begin{itemize}
+\item <1-> Várias alternativas na literatura que atendem a condição de estabilidade para combinação de espaços.
+\item <1-> Utilizados os espaços finitos de Brezzi-Douglas-Marini (BDM).
+\item <1-> BDM com mesma ordem de convergência para velocidade que Raviart-Thomas, porém possui dimensão menor.
+\end{itemize}
+  
+  \begin{block}{Espaços BDM para cada elemento:}<1->
+\begin{equation*} \label{eq:bdmspaces1}
+\mathbf{V}_{h}(E_{i}) = \left( \mathbf{P}^{k}(E_{i}) \right)^{2}
+\end{equation*}
+\begin{equation*} \label{eq:bdmspaces2}
+\mathbf{W}_{h}(E_{i}) = \mathbf{P}^{k-1}(E_{i})
+\end{equation*}
+  \end{block}
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEFM - Discretização da Forma Fraca}
+\begin{problem} [Discreto - Forma fraca da Eq. da Pressão e Velocidade]
+%Encontre $p_{h}$ $\in$ $W_{h}$ e $\mathbf{v_{h}}$ $\in$ $\mathbf{V_{h}}$ tal que:
+%\begin{equation*} \label{eq:variationalmfemh}
+%A(p_{h},w_{h},\mathbf{v_{h}},\zeta_{h}) = f(w_{h}) \quad \forall \zeta_{h} \in \mathbf{V}_{h}, %\quad \forall w \in W_{h}
+%\end{equation*}
+%com
+\begin{equation*} \label{eq:bilinearformhmfemch03h}
+A(p_{h},w_{h},\mathbf{v_{h}},\zeta_{h}) = \left( \frac{\mathbi{K}^{-1}}{\lambda} \mathbf{v_{h}}, \zeta_{h} \right) -(\nabla \cdot \zeta_{h}, p_{h}) -(\nabla \cdot \mathbf{v_{h}}, w_{h})
+\end{equation*}
+\begin{equation*} \label{eq:linearformhmfemch03h}
+f(w_{h}) = - (Q_{h}, w_{h})
+\end{equation*}
+\end{problem}
+\end{frame}
+
+%\begin{frame}
+%  \frametitle{MEFM - Discretização da Forma Fraca}
+%  \begin{itemize}
+%\item <1-> Para $k = 1$, $\mathbf{V}_{h}(E_{i}) = \{\mathbf{\zeta}_{h} =  \left( a_{E_{i}}^{1} + a_{E_{i}}^{2}x_{1} + a_{E_{i}}^{3}x_{2}, a_{E_{i}}^{4} + a_{E_{i}}^{5}x_{1} + a_{E_{i}}^{6}x_{2} \right) \}$
+%\item <1->  Para $k = 1$, G.L. em $\mathbf{V}_{h}$ são os valores das componentes normais das funções em dois pontos diferentes para cada aresta do elemento
+%\item <1-> Para $k = 1$, $\mathbf{W}_{h}$ é constante em cada elemento
+%\end{itemize}
+%\begin{figure}
+%\centering
+%\subfigure[Triângulo de Ordem 1]{
+%\includegraphics[width=0.29\textwidth]{figs/BDMTri1}
+%}
+%\quad
+%\subfigure[Triângulo de Ordem 2]{
+%\includegraphics[width=0.29\textwidth]{figs/BDMTri2}
+%}
+%\quad
+%\subfigure[Triângulo de Ordem 3]{
+%\includegraphics[width=0.29\textwidth]{figs/BDMTri3}
+%}
+%\label{fig:mfemtriangles}
+%\end{figure}
+%\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG}
+  \begin{itemize}
+\item <1-> MEF de Galerkin acurado para soluções suaves.
+\item <1-> Possíveis instabilidades para equações hiperbólicas. 
+\item <1-> Ponderação com peso maior no sentido do fluxo (Idéia do \emph{Upwind}).
+\item <1-> SUPG -$>$ Função de ponderação não mais corresponde ao espaço da função tentativa utilizada -$>$ $w_{s} = w + \tau_{s} \mathbf{v} \cdot \nabla w$.
+\end{itemize}
+\begin{figure} 
+\centering
+\includegraphics[width=0.5\textwidth]{figs/supgweightfunc}
+\caption{Comparação entre diferentes definições da função de ponderação.}
+\label{fig:supgweightfunc}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG}
+  \begin{itemize}
+\item <1-> Aplicando procedimento parecido ao MEF de Galerkin, porém com função $w_{s}$:
+\end{itemize}
+\begin{problem} [Discreto - Forma fraca da Eq. da Saturação]
+%Dados $S_{h}^{n+1}, f_{,S}$ e $\mathbf{v}_{h}$, encontre $S_{h}^{n+1}$ $\in$ $X_{h}$ tal que:
+%\begin{equation*} \label{eq:supgprob1}
+%F(S_{h}^{n+1}, w_{h}) = 0 \quad \forall w_{h} \in W_{h}
+%\end{equation*}
+%com
+%\begin{equation*} \label{eq:supgprob2}
+%X_{h} = \{ S_{h} \in H^{1}(\Omega_{h}); S_{h} \in \mathbf{P}^{1}(E_{i}); \textrm{$S_{h} = S_{D}$ em $\Gamma_{D}$} \}  
+%\end{equation*}
+%\begin{equation*} \label{eq:supgprob3}
+%W_{h} = \{ w_{h} \in H^{1}(\Omega_{h}); w_{h} \in \mathbf{P}^{k}(E_{i}); \textrm{$w_{h} = 0$ em $\Gamma_{N}$} \}  
+%\end{equation*}
+\begin{equation*} \label{eq:supgprob4}
+\begin{array}{cc}
+F(S_{h}^{n+1}, w_{h}) = \int_{\Omega} \left( w \phi \frac{S^{n+1} - S^{n}}{\Delta t} \right) d \Omega + 
+\int_{\Omega} wf_{,S}\mathbi{v}^{n+1} \cdot \nabla S^{n+1} d \Omega + \\
+\sum\limits_{E_{i}} \int_{E_{i}} \left(\mathbi{v}^{n+1} \cdot \nabla w \right) \tau_{s} r^{n+1} d \Omega
+\end{array}
+\end{equation*}
+\end{problem}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG}
+  \begin{itemize}
+\item <1-> Dois primeiros termos equivalem ao MEF de Galerkin.
+\item <1-> Terceiro termo responsável pela estabilização. 
+\item <1-> Termo adicional mantém consistência pois é basedo no resíduo $r$ descrito por:
+\end{itemize}
+\begin{block}{Resíduo}<1->
+\begin{equation*} \label{eq:residuumsupg2ch3}
+r^{n+1} = \phi \frac{S^{n+1} - S^{n}}{\Delta t}+ 
+          f_{,S}\mathbi{v}^{n+1} \cdot \nabla S^{n+1}
+\end{equation*}
+\end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG}
+  \begin{itemize}
+\item <1-> Não-linearidade devido à função de fluxo fracional.
+\item <1-> Linearizada usando resultado do passo anterior.
+\end{itemize}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.7\textwidth]{figs/fracflux}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG + Difusão Artificial}
+  \begin{itemize}
+\item <1-> Utilizado termo de estabilização simples: $\tau_{s} = \frac{h}{2\vert\vert \mathbi{v} \vert\vert}$.
+\item <1-> SUPG não elimina todas as oscilações. 
+\item <1-> Adição de dissipação numérica artificial para diminuir oscilações espúrias.
+\end{itemize}
+\begin{block}{Adição de difusão artificial}<1->
+\begin{equation*} \label{eq:viscartterm1}
+F(S_{h}^{n+1}, w_{h}) += \sum\limits_{E_{i}} \int_{E_{i}} \nu_{shock} \nabla w \cdot \nabla S_{h}^{n+1} d \Omega
+\end{equation*}
+\begin{equation*} \label{eq:viscartterm2}
+\nu_{shock} = \left\{ \begin{array}{ll}
+  \frac{\beta h \vert r^{n+1} \vert}{2\vert\vert \nabla S_{h}^{n} \vert\vert} & \textrm{se $\vert\vert \nabla S_{h}^{n} \vert\vert \neq 0$}\\
+  0 & \textrm{caso contrário}
+  \end{array} \right.
+\end{equation*}
+\end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG + Difusão Artificial}
+  \begin{itemize}
+\item <1-> Exemplo para Advecção Linear: MEF Galerkin.
+\end{itemize}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.75\textwidth]{figs/PureGalerkin_t_n=500}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG + Difusão Artificial}
+  \begin{itemize}
+\item <1-> Exemplo para Advecção Linear: MEF + SUPG.
+\end{itemize}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.75\textwidth]{figs/SUPGt_n=500}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF com Estabilização via SUPG + Difusão Artificial}
+  \begin{itemize}
+\item <1-> Exemplo para Advecção Linear: MEF + SUPG + Dif. Artificial.
+\end{itemize}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.75\textwidth]{figs/SUPG+ADt_n=500}
+  \end{figure}
+\end{frame}
+
+\subsection{Resolução do Sistema de Equações Lineares}
+
+\begin{frame}
+  \frametitle{Multigrid}
+    \begin{figure} 
+     \centering
+     \includegraphics[width=1.0\textwidth]{figs/Smoothing2}
+     \caption{Suavização do Erro (Weber, 2009).}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Multigrid}
+    \begin{figure} 
+     \centering
+     \includegraphics[width=0.9\textwidth]{figs/Interp2}
+     \caption{Representação do Erro em Níveis Distintos (Weber, 2009).}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Multigrid}
+    \begin{figure} 
+     \centering
+     \includegraphics[width=0.9\textwidth]{figs/RestrProlon}
+     \caption{Restrição e Prolongamento (Weber, 2009).}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Multigrid}
+    \begin{figure} 
+     \centering
+     \includegraphics[width=0.9\textwidth]{figs/CoarseCorrection}
+     \caption{Correção com Resultado da Malha Grosseira (Weber, 2009).}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Multigrid}
+  \begin{columns}[c]
+
+  \begin{column}{7cm}
+  \begin{figure} 
+     \centering
+     \includegraphics[width=1.1\textwidth]{figs/MGCycles}
+    \end{figure}
+  \end{column}
+
+  \begin{column}{3cm}
+   \begin{equation*} \label{eq:mg1}
+   A_{f}p_{f} = f_{f}
+   \end{equation*}
+   \begin{equation*} \label{eq:mg2}
+   A_{f}\hat{p_{f}} - f_{f} = r_{h}
+   \end{equation*}
+   \begin{equation*} \label{eq:mg3}
+   A_{f}p_{f} - A_{f}\hat{p_{f}}= - r_{h}
+   \end{equation*}
+   \begin{equation*} \label{eq:mg4}
+   A_{f}\Delta p_{f}= - r_{h}
+   \end{equation*}
+   \begin{equation*} \label{eq:mg5}
+   A_{c}\Delta p_{c}= - I_{f}^{c}r_{f}
+   \end{equation*}
+   \begin{equation*} \label{eq:mg6}
+   \hat{p_{f}^{\phantom{.}\ast}} = \hat{p_{f}} + I_{c}^{f} \Delta p_{c}
+   \end{equation*}
+  \end{column}
+  
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Multigrid}
+    \begin{figure} 
+     \centering
+     \includegraphics[width=1.0\textwidth]{figs/GMGxAMG}
+     \caption{Comparação dos métodos Multigrid Geométrico e Algébrico (Trottenberg, 2001).}
+    \end{figure}
+\end{frame}
+
+%% SECTION 5 - Implementation
+\section{Implementação}
+
+\subsection{Estrutura Geral}
+
+\begin{frame}
+  \frametitle{Pré-Processamento}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.75\textwidth]{figs/Pre-Process}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Sequencial Implícito}   
+    \begin{figure} 
+     \centering
+     \includegraphics[width=0.64\textwidth]{figs/Elliptic}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Sequencial Implícito}   
+    \begin{figure} 
+     \centering
+     \includegraphics[width=0.75\textwidth]{figs/Hyperbolic}
+    \end{figure}
+\end{frame}
+
+\subsection{FEniCS/Dolfin}
+
+\begin{frame}
+  \frametitle{FEniCS/Dolfin (www.fenicsproject.org)}
+\begin{itemize}
+\item <1-> FEniCS é um projeto colaborativo para automatização da solução de modelos matemáticos baseados em equações diferencias.
+\item <1-> Descrição matemática da forma variacional.
+\item <1-> Código UFL (altíssimo nível-\emph{Python}) bastante similar à descrição matemática.
+\item <1-> Vários operadores disponíveis: produto interno (\verb|dot()), produto vetorial (\verb|cross()), divergente (\verb|div()), gradiente (\verb|grad()), rotacional (\verb|curl()).
+\item <1-> Geração automática de código de baixo nível (\emph{C++}).
+\end{itemize}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.1\textwidth, angle=270]{figs/SequenceFenics}
+  \end{figure}  
+\end{frame}
+
+\begin{frame}
+  \frametitle{FEniCS/Dolfin (www.fenicsproject.org)}
+  \begin{columns}
+  \column{0.5\textwidth}
+    \begin{figure}[ht]
+    \begin{center}
+    \includegraphics[width=0.9\textwidth]{figs/ModulesDolfin}
+    \end{center}
+    \end{figure}
+  \column{0.5\textwidth}
+\begin{itemize}
+\item <1-> Código de baixo nível acessado de modo transparente através do DOLFIN.
+\item <1-> DOLFIN monta matrizes e vetores que representam o problema.
+\item <1-> Interface simples com várias bibliotecas de álgebra linear.
+\end{itemize}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Método dos Elementos Finitos - Galerkin}
+  \begin{block}{Forma Variacional}
+\begin{equation*} \label{eq:bilinearformh2}
+A(p,w) = \int_{\Omega} \nabla w \cdot \lambda K \nabla p d \Omega
+\end{equation*}
+\begin{equation*} \label{eq:linearformh2}
+f(w) = \int_{\Omega} wf d \Omega - \int_{\Gamma} gw d \Gamma
+\end{equation*}
+    
+   \end{block}
+   \begin{block}{Código Python}
+    \begin{pythoncode}
+def Galerkin(self, delfineVar, parameter):
+	.      
+    # Define variational form
+    a = inner(grad(v), K*mob*grad(u))*dx
+    L = v*f*dx - g*v*ds
+    \end{pythoncode}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Método dos Elementos Finitos Mistos}
+  \begin{block}{Forma Variacional}
+  \begin{equation*} \label{eq:bilinearformhmfem2}
+A(p,w,\mathbf{v},\zeta) = \int_{\Omega} \left( K^{-1} \lambda^{-1} \mathbf{v} \cdot \zeta - \nabla \cdot \zeta p - \nabla \cdot \mathbf{v} w \right) d \Omega
+\end{equation*}
+\begin{equation*} \label{eq:linearformhmfem2}
+f(w) = - \int_{\Omega} fw d \Omega
+\end{equation*}
+  \end{block}
+  \begin{block}{Código Python}
+    \begin{pythoncode}
+def MixedFEM(self, delfineVar, parameter):
+	.
+    # Define variational form
+    a = (dot((invK/mob)*v, zeta)
+        - div(zeta)*p - div(v)*w)*dx
+    L = - f*w*dx
+\end{pythoncode}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MEF Estabilizado via SUPG}
+  \begin{block}{Forma Variacional}
+\begin{array}{ll}
+F(S, w) = \int_{\Omega} \left( w \phi \frac{S^{n+1} - S^{n}}{\Delta t} \right) d \Omega + 
+\int_{\Omega} wf_{,S}\mathbi{v}^{n+1} \cdot \nabla S^{n+1} d \Omega + \\
+\sum\limits_{E_{i}} \int_{E_{i}} \left(\mathbi{v}^{n+1} \cdot \nabla w \right) \tau_{s} r^{n+1} d \Omega
+\end{array}
+\begin{equation*} \label{eq:residuumsupg2}
+r^{n+1} = \phi \frac{S^{n+1} - S^{n}}{\Delta t}+ 
+          f_{,S}\mathbf{v}^{n+1} \cdot \nabla S^{n+1}
+\end{equation*}
+\begin{equation*} \label{eq:stabtermsupg2}
+\tau_{s} = \frac{h}{2 \left| \left| \mathbf{v}^{n+1} \right| \right| }
+\end{equation*}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{MEF Estabilizado via SUPG}
+  \begin{block}{Código Python}
+    \begin{pythoncode}
+def SUPG(self, delfineVar, parameter):
+	.
+    # Galerkin variational problem
+    F = w*phi*((S-S0)/dt)*dx +
+        (w*fs*dot(v, grad(S))*dx
+    # Residual
+    r = phi*((S-S0)/dt) + fs*(dot(v, grad(S)))
+    # SUPG stabilization terms
+    tau = h/(2.0*sqrt(dot(v, v)))
+    F += tau*dot(v, grad(w))*r*dx
+    # Create bilinear and linear forms
+    a = lhs(F)
+    L = rhs(F)
+\end{pythoncode}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Montagem do Sistema de Equações}
+  \begin{block}{Código Python}
+    \begin{pythoncode}
+    # Assemble system and apply boundary conditions
+    A, rhs = assemble_system(a, L)
+    bc.apply(A, rhs)
+\end{pythoncode}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Resolução do Sistema de Equações via AMG}
+\begin{itemize}
+\item <1-> PyAMG é uma coleção de resolvedores de equações lineares com interface \emph{Python}.
+\item <1-> Operações de maior custo compiladas em \emph{C++}.
+\item <1-> Excelente ferramenta para prototipagem rápida.
+\item <1-> Diversos métodos disponíveis: AMG clássico, AMG \emph{Smoothed Aggregation}.
+\item <1-> Vários tipos de ciclos disponíveis: V, W, Full Multigrid.
+\item <1-> Uso do AMG como pre-condicionador para CG, GMRES, etc.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Resolução do Sistema de Equações via AMG}
+  \begin{block}{Código Python}
+    \begin{pythoncode}
+def solve_withPyAMG(self, delfineVar, parameter):
+    # Get sparse matrix data
+    (r,c,data) = A.data()
+    n = A.size(0)
+    # Matrix in scipy/numpy format
+    As = csr_matrix((data,c.view(),r.view()),shape=(n,n))
+    # Get right-hand side vector(rhs) data
+    b = rhs.data()
+    res = []
+    # Solve with AMG as preconditionar for the CG Method
+    ml = smoothed_aggregation_solver(Asp,max_coarse=10)
+    x = ml.solve(b,tol=1e-10,accel='cg',residuals=res)
+\end{pythoncode}
+  \end{block}
+\end{frame}
+
+%% SECTION 6 - Results
+\section{Resultados}
+
+\subsection{Elíptico - Homogêneo}
+
+\begin{frame}
+  \frametitle{Definição do Problema $|$ Tensor Isotrópico}
+  \begin{columns}[b]
+
+  \begin{column}{0.3\textwidth}
+    \begin{figure} 
+    \includegraphics[width=1.35\textwidth]{figs/HomogeneoIsotropico_N=64}
+    \end{figure}
+  \end{column}
+
+  \begin{column}{0.7\textwidth}
+    \begin{itemize}
+    \item Tensor de ``Permeabilidade'':
+    \end{itemize}
+    \begin{equation*}
+    \mathbf{K} = \left( \begin{array}{cc}
+    1 & 0 \\
+    0 & 1
+    \end{array} \right)
+    \end{equation*}
+    \begin{itemize}
+    \item Condição de Contorno:
+    \end{itemize}
+    \begin{displaymath} \label{eq:bchomoiso}
+    \left. \begin{array}{lll}
+    u = \cos(\pi x)  & \textrm{para } 0<x<1  \textrm{ e } y=0 \\
+    u = -\cos(\pi x) & \textrm{para } 0<x<1 \textrm{ e } y=1  \\
+    \nabla u \cdot \vec{n} = 0 & \textrm{para } 0<y<1 \textrm{ e } x=0,1
+    \end{array} \right.
+    \end{displaymath}
+    \begin{itemize}
+    \item Termo Fonte:
+    \end{itemize}
+  \begin{equation*} \label{eq:bchomoiso}
+  f(x,y) = 2 \pi^{2} \cos (\pi x) \cos(\pi y)
+  \end{equation*}
+  \end{column}
+  
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evolução do Resíduo $|$ Tensor Isotrópico}
+  \begin{figure} 
+  \centering
+  \includegraphics[width=0.8\textwidth]{figs/residualHomogeneoIsotropico_N=32}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Erro e Taxa de Convergência $|$ Tensor Isotrópico}
+  \begin{columns}[c]
+
+  \begin{column}{0.5\textwidth}
+  \begin{table}
+  \centering
+  \subtable[Triângulo Linear]{
+	\begin{tabular}{|c|c|c|}
+	\hline N & \vert\vert E_{max}\vert\vert & q_{max} \\
+	\hline
+	\hline 8 & 2.5e-02 & --- \\ 
+	\hline 16 & 6.4e-03 & 1.97 \\ 
+	\hline 32 & 1.6e-03 & 1.99 \\ 
+	\hline 64 & 4.0e-04 & 1.99 \\ 
+	\hline 128 & 1.0e-04 & 2.00 \\ 
+	\hline 256 & 2.5e-05 & 1.99 \\ 
+	\hline 
+	\end{tabular}
+	\label {tab:homoisolinear}
+   }
+  \end{table}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+  \begin{table}
+\centering
+\subtable[Triângulo Quadrático]{
+	\begin{tabular}{|c|c|c|}
+	\hline N & \vert\vert E_{max}\vert\vert & q_{max} \\
+	\hline
+	\hline 8 & 6.4e-04 & --- \\ 
+	\hline 16 & 8.7e-05 & 2.87 \\ 
+	\hline 32 & 1.1e-05 & 2.94 \\ 
+	\hline 64 & 1.4e-06 & 2.98 \\ 
+	\hline 128 & 1.8e-07 & 2.98 \\ 
+	\hline 256 & 2.2e-08 & 3.00 \\ 
+	\hline 
+	\end{tabular}
+	\label {tab:homoisoquad}
+}
+\end{table}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Definição do Problema $|$ Tensor Anisotrópico}
+  \begin{columns}[b]
+
+  %%\begin{column}{2.5cm}
+  \begin{column}{0.3\textwidth}
+  \begin{figure} 
+     %%\centering
+     \includegraphics[width=1.35\textwidth]{figs/HomogeneoAnisotropico_N=64}
+    \end{figure}
+  \end{column}
+
+  %%\begin{column}{7.5cm}
+  \begin{column}{0.7\textwidth}
+    \begin{itemize}
+  \item Tensor de ``Permeabilidade'':
+  \end{itemize}
+  \begin{equation*}
+  \mathbf{K} = \left( \begin{array}{cc}
+  2 & 1 \\
+  1 & 2
+  \end{array} \right)
+  \end{equation*}
+  \begin{itemize}
+  \item Condição de Contorno (e Solução Analítica):
+  \end{itemize}
+  \begin{equation*}
+  u(x,y)=e^{xy}
+  \end{equation*}
+  \begin{itemize}
+  \item Termo Fonte:
+  \end{itemize}
+  \begin{equation*} \label{eq:bcheteroaniso}
+  f(x,y) = -2(1 + x^2 + xy + y^2)e^{xy}
+  \end{equation*}
+  \end{column}
+  
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evolução do Resíduo e do Erro $|$ Tensor Anisotrópico}
+  \begin{columns}[c]
+
+  \begin{column}{0.5\textwidth}
+  \begin{figure} 
+     %%\centering
+     \includegraphics[width=1.3\textwidth]{figs/residualHomoAniso_N=64}
+    \end{figure}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+  \begin{table}
+  \centering
+  \subtable[Norma Máxima do Erro]{
+	\begin{tabular}{|c|c|c|}
+	\hline N & \vert\vert E_{max}\vert\vert & q_{max} \\
+	\hline
+	\hline 8 & 2.1e-03 & --- \\ 
+	\hline 16 & 5.3e-04 & 2.01 \\ 
+	\hline 32 & 1.3e-04 & 2.00 \\ 
+	\hline 64 & 3.3e-05 & 1.99 \\ 
+	\hline 128 & 8.3e-06 & 2.00 \\ 
+	\hline 256 & 2.1e-06 & 2.00 \\ 
+	\hline 
+	\end{tabular}
+	\label {tab:homoanisolinear}
+}
+\end{table}
+\end{column}
+\end{columns}
+\end{frame}
+
+\subsection{Elíptico - Heterogêneo e Anisotrópico}
+
+\begin{frame}
+  \frametitle{Definição do Problema}
+  \begin{columns}[b]
+
+  %%\begin{column}{2.5cm}
+  \begin{column}{0.3\textwidth}
+  \begin{figure} 
+     %%\centering
+     \includegraphics[width=1.35\textwidth]{figs/HeterogeneoAnisoMaterials_N=8}
+    \end{figure}
+  \end{column}
+
+  %%\begin{column}{7.5cm}
+  \begin{column}{0.7\textwidth}
+    \begin{itemize}
+  \item Tensor de "Permeabilidade":
+  \end{itemize}
+  \begin{equation*} \label{eq:coeffheteroaniso}
+  \mathbf{K} = \left\{ \begin{array}{cc}
+  \phantom{\alpha}\left( \begin{array}{cc}
+  1 & 0 \\
+  0 & 1
+  \end{array} \right) & \textrm{se $x\leq0$}\\
+  \alpha\left( \begin{array}{ll}
+  2 & 1 \\
+  1 & 2
+  \end{array} \right) & \textrm{se $x>0$}
+  \end{array} \right.
+  \end{equation*}
+  \begin{itemize}
+  \item Condição de Contorno (e Solução Analítica):
+  \end{itemize}
+  \begin{equation*} \label{eq:heteroaniso}
+  u(x,y) = \left\{ \begin{array}{ll}
+  [2\sin(y)+\cos(y)]\alpha x + \sin(y) & \textrm{se $x\leq0$}\\
+  \alpha\exp(x)\sin(y) & \textrm{se $x>0$}
+  \end{array} \right.
+  \end{equation*}
+  \begin{itemize}
+  \item Termo Fonte:
+  \end{itemize}
+  \begin{equation*} \label{eq:bcheteroaniso}
+  f(x,y) = \left\{ \begin{array}{ll}
+  [-2\sin(y)-\cos(y)]\alpha x - \sin(y) & \textrm{se $x\leq0$}\\
+  2\alpha\exp(x)\cos(y) & \textrm{se $x>0$}
+  \end{array} \right.
+  \end{equation*}
+  \end{column}
+  
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solução Numérica}
+\begin{figure}
+\centering
+\subfigure[$\alpha=1$]{
+\includegraphics[width=0.45\textwidth]{figs/HeterogeneoAnisoContour_N=64_alpha=1}
+}
+\quad
+\subfigure[$\alpha=10$]{
+\includegraphics[width=0.45\textwidth]{figs/HeterogeneoAnisoContour_N=64_alpha=10}
+}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solução Numérica}
+\begin{figure}
+\centering
+\subfigure[$\alpha=100$]{
+\includegraphics[width=0.45\textwidth]{figs/HeterogeneoAnisoContour_N=64_alpha=100}
+}
+\quad
+\subfigure[$\alpha=1000$]{
+\includegraphics[width=0.45\textwidth]{figs/HeterogeneoAnisoContour_N=64_alpha=1000}
+}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Comparação com Solução Analítica}
+\begin{table}
+\subtable[$\alpha=100$]{
+	\begin{tabular}{|c|c|c|c|c|}
+	\hline N & \vert\vert E_{max}\vert\vert & q_{max} & \vert\vert E_{L2}\vert\vert & q_{L2} \\
+	\hline
+	\hline 8 & 8.6e-01 & --- & 1.7e-00 & --- \\ 
+	\hline 16 & 2.9e-01 & 1.59 & 4.3e-01 & 1.98 \\ 
+	\hline 32 & 8.8e-02 & 1.70 & 1.1e-01 & 1.98 \\ 
+	\hline 64 & 2.5e-02 & 1.79 & 2.8e-02 & 1.94 \\ 
+	\hline 128 & 7.2e-03 & 1.81 & 7.9e-03 & 1.84 \\ 
+	\hline 
+	\end{tabular}
+}
+\qquad\qquad
+\subtable[$\alpha=1000$]{
+	\begin{tabular}{|c|c|c|c|c|}
+	\hline N & \vert\vert E_{max}\vert\vert & q_{max} & \vert\vert E_{L2}\vert\vert & q_{L2} \\
+	\hline
+	\hline 8 & 8.8e-00 & --- & 1.7e+01 & --- \\ 
+	\hline 16 & 2.9e-00 & 1.58 & 4.3e-00 & 1.98 \\ 
+	\hline 32 & 9.2e-01 & 1.68 & 1.1e-00 & 2.0 \\ 
+	\hline 64 & 2.7e-01 & 1.74 & 2.7e-01 & 1.99 \\ 
+	\hline 128 & 7.9e-02 & 1.79 & 6.8e-02 & 1.99 \\ 
+	\hline 
+	\end{tabular}
+}
+\end{table}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evolução do Resíduo}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{figs/residualHeterogeneoAniso_N=64_alpha=1}
+\end{figure}
+\end{frame}
+
+\subsection{Elíptico/Hiperbólico - Heterogêneo e Isotrópico}
+
+\begin{frame}
+  \frametitle{Definição do Problema}
+  \begin{columns}[c]
+
+  %%\begin{column}{2.5cm}
+  \begin{column}{0.7\textwidth}
+  \begin{figure} 
+     \centering
+     \includegraphics[width=1.0\textwidth]{figs/FiguraHeterogeneo2}
+    \end{figure}
+  \end{column}
+
+  %%\begin{column}{7.5cm}
+  \begin{column}{0.5\textwidth}
+  \begin{itemize}
+  \item Tensor de "Permeabilidade":
+  \end{itemize}
+  \begin{equation*}
+  \mathbf{K_{1}} = \left( \begin{array}{cc}
+  10^{0} & 0 \\
+  0 & 10^{0}
+  \end{array} \right)
+  \end{equation*}
+  \begin{equation*}
+  \mathbf{K_{2}} = \left( \begin{array}{cc}
+  10^{-4} & 0 \\
+  0 & 10^{-4}
+  \end{array} \right)
+  \end{equation*}
+  \begin{itemize}
+  \item Cond. Iniciais e Propriedades:
+  \end{itemize}
+  \begin{equation*}
+  Sw(x,0) = 0.0
+  \end{equation*}
+  \begin{equation*}
+  N_{o} = N_{w} = 2.0
+  \end{equation*}
+  \begin{equation*}
+  \mu = cte = 1.0
+  \end{equation*}
+  \begin{equation*}
+  \phi = cte = 1.0
+  \end{equation*}
+  \end{column}
+  
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solução Numérica}
+\begin{figure}
+\centering
+\includegraphics[width=1.0\textwidth]{figs/BIPHASE2D_PlotOverLine}
+\caption{Perfil de Saturação de poço a poço}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solução Numérica}
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{figs/BIPHASE2D2}
+\caption{Campo de Saturação e Velocidade para t = 0.3 PVI}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Buckley-Leverett 1-D}
+  \begin{itemize}
+  \item Resolução da Eq. de Buckley Leverett em 1-D com $v_{t}=1.0$.
+  \item Comparação com sol. analítica da Eq. de Buckley Leverett em 1-D com $v_{t}=1.0$ e $t=0.3$.
+  \end{itemize}
+  \begin{figure}
+  \centering
+  \includegraphics[width=0.675\textwidth]{figs/BL1D}
+  \end{figure}
+\end{frame}
+
+%% SECTION 6 - Conclusions
+\section{Conclusões}
+
+\begin{frame}
+  \frametitle{Conclusões}
+  \begin{itemize}
+    \item Desenvolvimento rápido ($<$ 1 ano $|$ ``meio'' expediente).
+    \item Malhas não-estruturadas; Domínios homogêneos e heterogêneos; Tensores de permeabilidade iso- e anisotrópicos.
+    \item Boa concordância das soluções numéricas com analíticas.
+    \item Facilidade para acrescentar novos métodos ou acessórios no código.
+    \item Testadas diferentes metodologias do MEF (Galerkin, MEFM, MEF+SUPG+Dif. Artif.).
+    \item SUPG + Dif. Artif. fundamentais para estabilizar a parte hiperbólica.
+    \item Multigrid Algébrico acelera consideravelmente a convergência.    
+   \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Trabalhos Futuros}
+  \begin{itemize}
+  \item Adicionar difusão artificial anisotrópica.
+  \item Mais ``Física'': Capilaridade, Gravidade e Modelo Black-oil.
+  \item Computação paralela (MPI/OpenMP).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Agradecimentos}
+  \begin{itemize}
+  \item PADMEC
+  \item FACEPE
+  \item CNPQ
+  \end{itemize}
+  \begin{center} {\LARGE Obrigado pela atenção!} \end{center}
+\end{frame}
+
+\end{document}

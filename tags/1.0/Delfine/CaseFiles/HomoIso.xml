@@ -1,0 +1,72 @@
+<delfine>
+    <geometry>
+        <mesh dimension="2" order ="1" type="gmsh">
+            <filename>HomoIsoBCStruct.msh</filename>
+        </mesh>
+        <boundary-conditions>
+            <well bctype="flux-rate(m^3/d)" function="injection" id="301">.250</well>
+            <well bctype="flux-rate(m^3/d)" function="production" id="351">-.250</well>
+        </boundary-conditions>  
+    </geometry>
+    <physical>
+        <fluid-properties>
+            <water use="no">
+                <viscosity model="none">1.0</viscosity>
+                <density model="none">0.01</density>
+            </water>
+            <oil use="yes">
+                <viscosity model="p-dep">1.0</viscosity>
+                <density model="t-dep">0.04</density>
+                <capillary-pressure model="BC">0.0</capillary-pressure>
+            </oil>
+        </fluid-properties>
+        <rock-properties>
+            <rock-type id="1">
+                <porosity compressible="no">1.0</porosity>
+                <rock-heat-coefficient>1.0</rock-heat-coefficient>
+                <permeability type="per-domain">
+                    <Kxx>0.50</Kxx>
+                    <Kxy>0.0</Kxy>
+                    <Kxz>0.0</Kxz>
+                    <Kyy>0.50</Kyy>
+                    <Kyz>0.0</Kyz>
+                    <Kzz>0.0</Kzz>
+                </permeability>
+            </rock-type>
+            <rock-type id="5">
+                <porosity compressible="yes">0.8</porosity>
+                <permeability type="per-element-list">
+                    <filename>permeability.dat</filename> 
+                </permeability>
+            </rock-type>
+        </rock-properties>
+        <rock-fluid-properties>
+            <relative-permeability model="corey">
+                <krw>
+                    <krw_end>1.0</krw_end>
+                    <Swc>0.0</Swc>
+                    <nw>2.0</nw>
+                </krw>
+                <kro>
+                    <Sor>0.0</Sor>
+                    <no>2.0</no>
+                </kro>
+            </relative-permeability>
+        </rock-fluid-properties>
+    </physical>
+    <numerical>
+        <pressure-solver formulation="mixedfem" type="cg">
+            <tolerance>1e-10</tolerance>
+            <max-number-steps>200</max-number-steps>
+            <pre-conditioning type="none">
+                <number-coarse-levels>4</number-coarse-levels>
+                <number-relax-iterations>3</number-relax-iterations>
+            </pre-conditioning>
+        </pressure-solver>
+        <saturation-solver>
+            <total-time-analysis>200</total-time-analysis>            
+            <courant>0.9</courant>
+            <limiter type="none"/>
+        </saturation-solver>
+    </numerical>
+</delfine>
